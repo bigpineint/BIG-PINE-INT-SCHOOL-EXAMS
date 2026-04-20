@@ -295,6 +295,7 @@
             <div class="tab-buttons">
                 <button class="tab-btn active" onclick="switchTab('addQuestion')">Add Question</button>
                 <button class="tab-btn" onclick="switchTab('viewQuestions')">View Questions</button>
+                <button class="tab-btn" onclick="switchTab('classes')">Classes</button>
                 <button class="tab-btn" onclick="switchTab('settings')">Exam Settings</button>
             </div>
 
@@ -306,6 +307,20 @@
                     <div id="questionMessage" class="message"></div>
                     
                     <form id="questionForm">
+                        <div class="form-group">
+                            <label>Select Class *</label>
+                            <select id="questionClass" required>
+                                <option value="">Select class...</option>
+                                <option value="All">All Classes</option>
+                                <option value="Basic 3">Basic 3</option>
+                                <option value="Basic 4">Basic 4</option>
+                                <option value="Basic 5">Basic 5</option>
+                                <option value="SS 1">SS 1</option>
+                                <option value="SS 2">SS 2</option>
+                                <option value="SS 3">SS 3</option>
+                            </select>
+                        </div>
+
                         <div class="form-group">
                             <label>Question Text *</label>
                             <textarea id="questionText" placeholder="Enter the question..." required></textarea>
@@ -355,6 +370,30 @@
                     <h2>Questions (<span id="questionCount">0</span>)</h2>
                     <div id="questionsList">
                         <p style="color: #bbb; text-align: center;">No questions added yet</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Classes Tab -->
+            <div id="classes" class="tab-content">
+                <div style="background: rgba(34, 197, 94, 0.1); padding: 20px; border-radius: 8px;">
+                    <h2 style="color: #22C55E; margin-bottom: 20px;">Manage Classes</h2>
+                    
+                    <div class="form-group">
+                        <label>Add New Class</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="newClass" placeholder="Enter class name (e.g., Class 10, 10A)" style="flex: 1;">
+                            <button class="btn" onclick="addClass()" style="margin-top: 0; width: auto;">Add</button>
+                        </div>
+                    </div>
+
+                    <div id="classesMessage" class="message"></div>
+
+                    <div style="margin-top: 20px;">
+                        <h3 style="color: #22C55E; margin-bottom: 15px;">Available Classes</h3>
+                        <div id="classesList" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            <p style="color: #bbb;">No classes added yet</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -462,8 +501,10 @@
         document.getElementById('questionForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
+            const questionClass = document.getElementById('questionClass').value;
             const question = {
                 id: Date.now(),
+                class: questionClass,
                 text: document.getElementById('questionText').value.trim(),
                 options: {
                     a: document.getElementById('optionA').value.trim(),
@@ -475,7 +516,7 @@
             };
 
             // Validation
-            if (!question.text || !question.options.a || !question.options.b || !question.options.c || !question.options.d || !question.correct) {
+            if (!questionClass || !question.text || !question.options.a || !question.options.b || !question.options.c || !question.options.d || !question.correct) {
                 document.getElementById('questionMessage').textContent = '❌ Please fill in all fields';
                 document.getElementById('questionMessage').className = 'message error';
                 return;
@@ -516,6 +557,7 @@
             questionsList.innerHTML = questions.map((q, index) => `
                 <div class="question-item">
                     <h3>Question ${index + 1}</h3>
+                    <p style="color: #22C55E; font-size: 12px;">📚 Class: <strong>${q.class || 'All'}</p>
                     <p><strong>${q.text}</strong></p>
                     <div class="options">
                         <p>A) ${q.options.a}</p>
@@ -565,12 +607,80 @@
 
             document.getElementById('examDuration').value = settings.examDuration;
             document.getElementById('numQuestions').value = settings.numQuestions;
+            
+            // Initialize default classes if not exist
+            let classes = JSON.parse(localStorage.getItem('examClasses'));
+            if (!classes || classes.length === 0) {
+                const defaultClasses = ['Basic 3', 'Basic 4', 'Basic 5', 'SS 1', 'SS 2', 'SS 3'];
+                localStorage.setItem('examClasses', JSON.stringify(defaultClasses));
+            }
+            
+            loadClasses();
+        }
+
+        function addClass() {
+            const newClass = document.getElementById('newClass').value.trim();
+            const message = document.getElementById('classesMessage');
+
+            if (!newClass) {
+                message.textContent = '❌ Please enter a class name';
+                message.className = 'message error';
+                return;
+            }
+
+            let classes = JSON.parse(localStorage.getItem('examClasses')) || [];
+            
+            if (classes.includes(newClass)) {
+                message.textContent = '❌ Class already exists';
+                message.className = 'message error';
+                return;
+            }
+
+            classes.push(newClass);
+            localStorage.setItem('examClasses', JSON.stringify(classes));
+            
+            message.textContent = '✅ Class added successfully!';
+            message.className = 'message success';
+            
+            document.getElementById('newClass').value = '';
+            loadClasses();
+
+            setTimeout(() => {
+                message.className = 'message';
+            }, 3000);
+        }
+
+        function loadClasses() {
+            let classes = JSON.parse(localStorage.getItem('examClasses')) || [];
+            const classesList = document.getElementById('classesList');
+
+            if (classes.length === 0) {
+                classesList.innerHTML = '<p style="color: #bbb;">No classes added yet</p>';
+                return;
+            }
+
+            classesList.innerHTML = classes.map(c => `
+                <div style="background: rgba(34, 197, 94, 0.2); padding: 8px 15px; border-radius: 6px; display: flex; align-items: center; gap: 10px;">
+                    <span style="color: #fff; font-weight: 500;">${c}</span>
+                    <button onclick="deleteClass('${c}')" style="background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px;">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function deleteClass(className) {
+            if (confirm('Delete class "' + className + '"?')) {
+                let classes = JSON.parse(localStorage.getItem('examClasses')) || [];
+                classes = classes.filter(c => c !== className);
+                localStorage.setItem('examClasses', JSON.stringify(classes));
+                loadClasses();
+            }
         }
 
         function clearAllData() {
-            if (confirm('⚠️ Are you sure? This will delete ALL questions and cannot be undone!')) {
+            if (confirm('⚠️ Are you sure? This will delete ALL questions, classes and cannot be undone!')) {
                 localStorage.removeItem('examQuestions');
                 localStorage.removeItem('examSettings');
+                localStorage.removeItem('examClasses');
                 localStorage.removeItem('studentInfo');
                 localStorage.removeItem('examResults');
                 
@@ -828,6 +938,24 @@
             const lines = text.split('\n').map(l => l.trim()).filter(l => l);
             let currentQuestion = null;
             let optionsFound = 0;
+            
+            // Detect class from first lines
+            let detectedClass = 'All';
+            const classPatterns = [
+                /^Class\s*[:=]\s*(Basic\s*\d+|SS\s*\d+)/i,
+                /^Form\s*[:=]\s*(\d+)/i,
+                /^Grade\s*[:=]\s*(\d+)/i
+            ];
+            
+            for (let i = 0; i < Math.min(5, lines.length); i++) {
+                for (const pattern of classPatterns) {
+                    const match = lines[i].match(pattern);
+                    if (match) {
+                        detectedClass = match[1];
+                        break;
+                    }
+                }
+            }
 
             const questionPatterns = [
                 /^Q\s*\.?\s*(\d+)\)?[:\.\-]?\s*/i,
@@ -866,6 +994,7 @@
                         }
                         currentQuestion = {
                             text: qText.trim(),
+                            class: detectedClass,
                             options: {}
                         };
                         optionsFound = 0;
@@ -937,7 +1066,8 @@
                             c: parts[3],
                             d: parts[4]
                         },
-                        correct: (parts[5] || 'a').toLowerCase()
+                        correct: (parts[5] || 'a').toLowerCase(),
+                        class: parts[6] || 'All'
                     });
                 }
             }
@@ -952,6 +1082,7 @@
                 if (item.question || item.text) {
                     questions.push({
                         text: item.question || item.text,
+                        class: item.class || item.form || item.grade || 'All',
                         options: item.options || item.choices || {
                             a: item.a || item.optionA || '',
                             b: item.b || item.optionB || '',
@@ -978,6 +1109,7 @@
             questions.forEach((q, idx) => {
                 previewHTML += `<div style="background: rgba(0,0,0,0.3); padding: 10px; margin: 8px 0; border-radius: 6px;">`;
                 previewHTML += `<p style="color: #22C55E; margin: 5px 0; font-weight: 600;">Q${idx + 1}) ${q.text || 'No text'}</p>`;
+                previewHTML += `<p style="color: #22C55E; margin: 3px 0; font-size: 12px;">📚 Class: <strong>${q.class || 'All'}</strong></p>`;
                 previewHTML += `<p style="color: #ddd; margin: 3px 0; font-size: 12px;">`;
                 previewHTML += `A) ${q.options.a || '?'} | B) ${q.options.b || '?'} | C) ${q.options.c || '?'} | D) ${q.options.d || '?'}`;
                 previewHTML += `</p>`;
@@ -1034,6 +1166,3 @@
 
 </body>
 </html>
-
-
-
