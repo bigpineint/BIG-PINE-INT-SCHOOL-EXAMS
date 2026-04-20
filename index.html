@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Exam Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #22C55E, #07110C);
+        }
+
+        .container{
+            width: 400px;
+            background: linear-gradient(to right, #333333, #000000);
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .container h1{
+            text-align: center;
+            color: #22C55E;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        form{
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-box{
+            position: relative;
+        }
+
+        .input-box input{
+            width: 100%;
+            padding: 12px 15px 12px 15px;
+            background: #fff;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            outline: none;
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            transition: 0.3s ease;
+        }
+
+        .input-box input:focus{
+            background: #fff;
+            border-color: #22C55E;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+        }
+
+        .input-box input::placeholder{
+            color: #999;
+        }
+
+        .input-box input[type="file"]::file-selector-button{
+            background: #22C55E;
+            color: #000;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 10px;
+            transition: 0.3s ease;
+        }
+
+        .input-box input[type="file"]::file-selector-button:hover{
+            background: #1ca34a;
+        }
+
+        .input-box input[type="file"]{
+            padding: 12px 15px;
+            color: #333;
+        }
+
+        .btn{
+            width: 100%;
+            padding: 12px;
+            background: #22C55E;
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn:hover{
+            background: #1ca34a;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(34, 197, 94, 0.4);
+        }
+
+        .btn:active{
+            transform: translateY(0);
+        }
+
+        .message{
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .message.success{
+            background: #22C55E;
+            color: #fff;
+            display: block;
+        }
+
+        .message.error{
+            background: #ef4444;
+            color: #fff;
+            display: block;
+        }
+
+    </style>
+
+    <div class="container">
+        <h1>Exam Login</h1>
+        <form id="loginForm">
+            <div class="input-box">
+                <input type="text" id="name" placeholder="Full Name" required>
+            </div>
+            <div class="input-box">
+                <input type="number" id="age" placeholder="Age" required>
+            </div>
+            <div class="input-box">
+                <input type="text" id="class" placeholder="Class" required>
+            </div>
+            <div class="input-box">
+                <input type="text" id="subject" placeholder="Subject" required>
+            </div>
+            <div class="input-box">
+                <input type="file" id="document" accept=".doc,.docx,.docm,.dot,.dotx,.dotm" placeholder="Upload Word Document" required>
+            </div>
+            <button type="submit" class="btn">Start Exam</button>
+        </form>
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value.trim();
+            const age = document.getElementById('age').value.trim();
+            const studentClass = document.getElementById('class').value.trim();
+            const subject = document.getElementById('subject').value.trim();
+            const documentFile = document.getElementById('document').files[0];
+            const messageDiv = document.getElementById('message');
+            
+            // Clear message
+            messageDiv.innerHTML = '';
+            messageDiv.className = 'message';
+            
+            // Validation - all fields required
+            if (!name || !age || !studentClass || !subject || !documentFile) {
+                messageDiv.textContent = '❌ Please fill in all fields!';
+                messageDiv.className = 'message error';
+                return;
+            }
+            
+            // File validation - Word documents only
+            const allowedFormats = ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.wordprocessingml.macro-enabled.document'];
+            if (!allowedFormats.includes(documentFile.type) && !documentFile.name.match(/\.(doc|docx|docm)$/i)) {
+                messageDiv.textContent = '❌ Please upload a valid Word document (.doc, .docx, .docm)!';
+                messageDiv.className = 'message error';
+                return;
+            }
+            
+            // File size validation (max 10MB)
+            if (documentFile.size > 10 * 1024 * 1024) {
+                messageDiv.textContent = '❌ File size must be less than 10MB!';
+                messageDiv.className = 'message error';
+                return;
+            }
+            
+            // Name validation - letters and spaces only, minimum 3 characters
+            const nameRegex = /^[a-zA-Z\s]{3,}$/;
+            if (!nameRegex.test(name)) {
+                messageDiv.textContent = '❌ Please enter a valid full name (letters only, minimum 3 characters)!';
+                messageDiv.className = 'message error';
+                return;
+            }
+            
+            // Age validation
+            if (isNaN(age) || age < 5 || age > 120) {
+                messageDiv.textContent = '❌ Please enter a valid age (5-120)!';
+                messageDiv.className = 'message error';
+                return;
+            }
+            
+            // Class validation - alphanumeric only, 1-5 characters
+            const classRegex = /^[a-zA-Z0-9\s]{1,10}$/;
+            if (!classRegex.test(studentClass)) {
+                messageDiv.textContent = '❌ Please enter a valid class (e.g., "Class 10", "10A", "10")!';
+                messageDiv.className = 'message error';
+                return;
+            }
+            
+            // Subject validation - letters and spaces only, minimum 3 characters
+            const subjectRegex = /^[a-zA-Z\s]{3,}$/;
+            if (!subjectRegex.test(subject)) {
+                messageDiv.textContent = '❌ Please enter a valid subject (letters only, minimum 3 characters)!';
+                messageDiv.className = 'message error';
+                return;
+            }
+            
+            // Store student data
+            const studentData = {
+                name: name,
+                age: age,
+                class: studentClass,
+                subject: subject,
+                document: documentFile.name,
+                loginTime: new Date().toLocaleString()
+            };
+            
+            localStorage.setItem('studentInfo', JSON.stringify(studentData));
+            
+            // Show success message
+            messageDiv.textContent = '✅ Welcome ' + name + '! Starting exam...';
+            messageDiv.className = 'message success';
+            
+            // Reset form
+            this.reset();
+            
+            // Redirect to exam page
+            setTimeout(() => {
+                window.location.href = 'exam.html';
+            }, 1500);
+        });
+    </script>
+
+</body>
+</html>
