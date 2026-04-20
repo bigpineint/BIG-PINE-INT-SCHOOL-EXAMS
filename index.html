@@ -153,9 +153,6 @@
             <div class="input-box">
                 <input type="text" id="subject" placeholder="Subject" required>
             </div>
-            <div class="input-box">
-                <input type="file" id="document" accept=".doc,.docx,.docm,.dot,.dotx,.dotm" placeholder="Upload Word Document" required>
-            </div>
             <button type="submit" class="btn">Start Exam</button>
         </form>
         <div id="message" class="message"></div>
@@ -168,8 +165,7 @@
             const name = document.getElementById('name').value.trim();
             const age = document.getElementById('age').value.trim();
             const studentClass = document.getElementById('class').value.trim();
-            const subject = document.getElementById('subject').value.trim();
-            const documentFile = document.getElementById('document').files[0];
+            const subject = document.getElementById('subject').value.trim()
             const messageDiv = document.getElementById('message');
             
             // Clear message
@@ -235,7 +231,6 @@
                 age: age,
                 class: studentClass,
                 subject: subject,
-                document: documentFile.name,
                 loginTime: new Date().toLocaleString()
             };
             
