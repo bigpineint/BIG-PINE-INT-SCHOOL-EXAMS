@@ -315,6 +315,9 @@
                                 <option value="Basic 3">Basic 3</option>
                                 <option value="Basic 4">Basic 4</option>
                                 <option value="Basic 5">Basic 5</option>
+                                <option value="JSS 1">JSS 1</option>
+                                <option value="JSS 2">JSS 2</option>
+                                <option value="JSS 3">JSS 3</option>
                                 <option value="SS 1">SS 1</option>
                                 <option value="SS 2">SS 2</option>
                                 <option value="SS 3">SS 3</option>
@@ -611,7 +614,7 @@
             // Initialize default classes if not exist
             let classes = JSON.parse(localStorage.getItem('examClasses'));
             if (!classes || classes.length === 0) {
-                const defaultClasses = ['Basic 3', 'Basic 4', 'Basic 5', 'SS 1', 'SS 2', 'SS 3'];
+                const defaultClasses = ['Basic 3', 'Basic 4', 'Basic 5', 'JSS 1', 'JSS 2', 'JSS 3', 'SS 1', 'SS 2', 'SS 3'];
                 localStorage.setItem('examClasses', JSON.stringify(defaultClasses));
             }
             
