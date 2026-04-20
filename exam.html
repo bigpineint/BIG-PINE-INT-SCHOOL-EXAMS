@@ -321,10 +321,6 @@
                 <div class="info-value" id="studentName">-</div>
             </div>
             <div class="info-item">
-                <div class="info-label">Age</div>
-                <div class="info-value" id="studentAge">-</div>
-            </div>
-            <div class="info-item">
                 <div class="info-label">Class</div>
                 <div class="info-value" id="studentClass">-</div>
             </div>
@@ -414,7 +410,6 @@
             if (studentInfo) {
                 const data = JSON.parse(studentInfo);
                 document.getElementById('studentName').textContent = data.name;
-                document.getElementById('studentAge').textContent = data.age;
                 document.getElementById('studentClass').textContent = data.class;
                 document.getElementById('studentSubject').textContent = data.subject;
             } else {
@@ -434,11 +429,17 @@
             answers = new Array(questions.length).fill(null);
             
             displayQuestion();
+            
+            // Load timer from settings
+            const settings = JSON.parse(localStorage.getItem('examSettings')) || { examDuration: 30 };
+            timeLeft = parseInt(settings.examDuration) * 60;
+            
             startTimer();
         });
 
         // Timer functionality
         let timeLeft = 30 * 60;
+        let timerInterval = null;
         function startTimer() {
             // Display initial time immediately
             let minutes = Math.floor(timeLeft / 60);
@@ -448,7 +449,7 @@
                 (seconds < 10 ? '0' : '') + seconds;
             
             // Start countdown
-            setInterval(function() {
+            timerInterval = setInterval(function() {
                 if (timeLeft > 0) {
                     timeLeft--;
                     let minutes = Math.floor(timeLeft / 60);
@@ -457,10 +458,23 @@
                         (minutes < 10 ? '0' : '') + minutes + ':' + 
                         (seconds < 10 ? '0' : '') + seconds;
                     
-                    let progress = ((30 * 60 - timeLeft) / (30 * 60)) * 100;
+                    let settings = JSON.parse(localStorage.getItem('examSettings')) || { examDuration: 30 };
+                    let totalTime = parseInt(settings.examDuration) * 60;
+                    let progress = ((totalTime - timeLeft) / totalTime) * 100;
                     document.getElementById('progressBar').style.width = progress + '%';
+                } else {
+                    // Time's up - auto submit
+                    stopTimer();
+                    submitExam();
                 }
             }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
         }
 
         function displayQuestion() {
@@ -521,6 +535,8 @@
         }
 
         function submitExam() {
+            stopTimer();
+            
             let score = 0;
             questions.forEach((q, index) => {
                 if (answers[index] === (q.correct || q.correct)) {
@@ -539,23 +555,20 @@
 
             localStorage.setItem('examResults', JSON.stringify(results));
 
-            // Create answer review
+            // Create answer review - hide correct answers
             let reviewHTML = '';
             const optionLetters = ['A', 'B', 'C', 'D'];
             questions.forEach((q, index) => {
                 const qNum = index + 1;
-                const userAnswer = answers[index].toUpperCase();
-                const correctAnswer = (q.correct || q.correct).toUpperCase();
+                const userAnswer = answers[index] ? answers[index].toUpperCase() : 'Not answered';
                 const isCorrect = answers[index] === (q.correct || q.correct);
                 
-                const userAnswerText = (q.options || Object.values(q.options))[answers[index].charCodeAt(0) - 97];
-                const correctAnswerText = (q.options || Object.values(q.options))[correctAnswer.charCodeAt(0) - 97];
+                const userAnswerText = answers[index] ? (q.options || Object.values(q.options))[answers[index].charCodeAt(0) - 97] : 'Not answered';
                 
                 reviewHTML += `
                     <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ${isCorrect ? '#22C55E' : '#ef4444'};">
                         <p style="color: #fff; font-weight: 600; margin-bottom: 10px;">Q${qNum}) ${q.question || q.text}</p>
-                        <p style="color: ${isCorrect ? '#22C55E' : '#ef4444'}; margin: 5px 0;">✓ Your Answer: <strong>${userAnswer}) ${userAnswerText}</strong></p>
-                        ${!isCorrect ? `<p style="color: #22C55E; margin: 5px 0;">✓ Correct Answer: <strong>${correctAnswer}) ${correctAnswerText}</strong></p>` : ''}
+                        <p style="color: ${isCorrect ? '#22C55E' : '#ef4444'}; margin: 5px 0;">${isCorrect ? '✓' : '✗'} Your Answer: <strong>${userAnswer}) ${userAnswerText}</strong></p>
                     </div>
                 `;
             });
