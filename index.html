@@ -172,61 +172,28 @@
         });
 
         function loadClasses() {
-            const classes = JSON.parse(localStorage.getItem('examClasses')) || [];
+            const classes = JSON.parse(localStorage.getItem('examClasses')) || ['Basic 3', 'Basic 4', 'Basic 5', 'JSS 1', 'JSS 2', 'JSS 3', 'SS 1', 'SS 2', 'SS 3'];
             const classSelect = document.getElementById('class');
             
             classSelect.innerHTML = '<option value="">Select Class</option>';
             
-            if (classes.length === 0) {
-                classSelect.innerHTML = '<option value="__other__">+ Add Custom Class</option>';
-            } else {
-                classSelect.innerHTML += '<option value="__other__">+ Add Custom Class</option>';
-                classes.forEach(c => {
-                    const option = document.createElement('option');
-                    option.value = c;
-                    option.textContent = c;
-                    classSelect.appendChild(option);
-                });
-            }
-
-            classSelect.addEventListener('change', function() {
-                let inputBox = document.getElementById('classInputBox');
-                if (this.value === '__other__') {
-                    if (!inputBox) {
-                        const div = document.createElement('div');
-                        div.id = 'classInputBox';
-                        div.className = 'input-box';
-                        div.innerHTML = '<input type="text" id="customClass" placeholder="Enter your class">';
-                        this.parentNode.parentNode.insertBefore(div, this.parentNode.nextSibling);
-                        document.getElementById('customClass').focus();
-                    }
-                    this.name = 'hiddenSel';
-                    this.style.display = 'none';
-                } else {
-                    if (inputBox) {
-                        inputBox.remove();
-                    }
-                    this.name = 'class';
-                    this.style.display = 'block';
-                }
+            classes.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c;
+                option.textContent = c;
+                classSelect.appendChild(option);
             });
+            
+            if (classes.length === 0) {
+                classSelect.innerHTML = '<option value="">No classes - Contact teacher</option>';
+            }
         }
 
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const name = document.getElementById('name').value.trim();
-            const classSelect = document.getElementById('class');
-            let studentClass = classSelect.value.trim();
-            
-            // If using custom input, get value from there
-            if (classSelect.value === '__other__' || !classSelect.value) {
-                const customInput = document.getElementById('customClass');
-                if (customInput) {
-                    studentClass = customInput.value.trim();
-                }
-            }
-            
+            const studentClass = document.getElementById('class').value.trim();
             const subject = document.getElementById('subject').value.trim();
             const messageDiv = document.getElementById('message');
             
@@ -242,9 +209,10 @@
                 return;
             }
             
-            // Class validation - must be from predefined list or custom
-            if (!studentClass || studentClass === '__other__') {
-                messageDiv.textContent = '❌ Please select or enter a class!';
+            // Class validation - must be from predefined list
+            const validClasses = ['Basic 3', 'Basic 4', 'Basic 5', 'JSS 1', 'JSS 2', 'JSS 3', 'SS 1', 'SS 2', 'SS 3'];
+            if (!studentClass || !validClasses.includes(studentClass)) {
+                messageDiv.textContent = '❌ Please select a valid class!';
                 messageDiv.className = 'message error';
                 return;
             }
