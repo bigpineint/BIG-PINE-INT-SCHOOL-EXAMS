@@ -375,9 +375,9 @@
                     </div>
 
                     <div class="form-group">
-                        <label>📄 Upload Questions (Any Format)</label>
-                        <input type="file" id="pdfUpload" accept=".pdf,.txt,.docx,.doc" style="padding: 10px; background: #fff; width: 100%; border-radius: 8px;">
-                        <p style="color: #bbb; font-size: 12px; margin-top: 8px;">Upload PDF, TXT, Word or any file with questions. Format: Q1) Question text\nA) Option\nB) Option\nC) Option\nD) Option\nCorrect: A</p>
+                        <label>📄 Upload Questions (All File Types)</label>
+                        <input type="file" id="pdfUpload" accept=".pdf,.txt,.doc,.docx,.rtf,.md,.html,.htm,.csv,.json,.xml" style="padding: 10px; background: #fff; width: 100%; border-radius: 8px;">
+                        <p style="color: #bbb; font-size: 12px; margin-top: 8px;">Upload any file (PDF, Word, TXT, CSV, etc.) with questions. Format: Q1) Question text<br>A) Option<br>B) Option<br>C) Option<br>D) Option<br>Correct: A</p>
                         <button class="btn" onclick="processPDF()" style="width: 100%; margin-top: 10px;">Process File</button>
                         <div id="pdfMessage" class="message" style="margin-top: 10px;"></div>
                         <div id="questionsPreview" style="display: none; margin-top: 15px; background: rgba(34, 197, 94, 0.1); padding: 15px; border-radius: 8px; max-height: 400px; overflow-y: auto; border: 2px solid #22C55E;"></div>
@@ -601,7 +601,8 @@
             }
 
             const fileName = file.name.toLowerCase();
-            if (fileName.endsWith('.txt')) {
+            
+            if (fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.rtf')) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     try {
@@ -617,37 +618,182 @@
                 };
                 reader.readAsText(file);
             } else if (fileName.endsWith('.pdf')) {
-                if (!window.pdfjsLib) {
-                    const script = document.createElement('script');
-                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-                    script.onload = function() {
-                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            extractPDFText(e.target.result, message, preview, importBtn);
-                        };
-                        reader.readAsArrayBuffer(file);
-                    };
-                    script.onerror = function() {
-                        message.textContent = '❌ Could not load PDF processor. Please use TXT file instead.';
+                processPDFJS(file, message, preview, importBtn);
+            } else if (fileName.endsWith('.docx')) {
+                processDOCX(file, message, preview, importBtn);
+            } else if (fileName.endsWith('.doc')) {
+                processDOC(file, message, preview, importBtn);
+            } else if (fileName.endsWith('.html') || fileName.endsWith('.htm')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const text = e.target.result.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
+                    extractedQuestions = parseQuestionsFromText(text);
+                    displayQuestionsPreview(extractedQuestions, message, preview, importBtn);
+                };
+                reader.readAsText(file);
+            } else if (fileName.endsWith('.csv') || fileName.endsWith('.json') || fileName.endsWith('.xml')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        let text = e.target.result;
+                        if (fileName.endsWith('.json')) {
+                            try {
+                                const data = JSON.parse(text);
+                                extractedQuestions = parseQuestionsFromJSON(data);
+                            } catch (jsonErr) {
+                                text = JSON.stringify(data);
+                                extractedQuestions = parseQuestionsFromText(text);
+                            }
+                        } else if (fileName.endsWith('.csv')) {
+                            extractedQuestions = parseQuestionsFromCSV(text);
+                        } else if (fileName.endsWith('.xml')) {
+                            text = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
+                            extractedQuestions = parseQuestionsFromText(text);
+                        }
+                        if (extractedQuestions.length > 0) {
+                            displayQuestionsPreview(extractedQuestions, message, preview, importBtn);
+                        } else {
+                            message.textContent = '❌ No questions found. Try plain text format.';
+                            message.className = 'message error';
+                        }
+                    } catch (err) {
+                        message.textContent = '❌ Error reading file: ' + err.message;
                         message.className = 'message error';
-                        preview.style.display = 'none';
-                        importBtn.style.display = 'none';
-                    };
-                    document.head.appendChild(script);
-                } else {
+                    }
+                };
+                reader.readAsText(file);
+            } else {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const text = e.target.result;
+                        extractedQuestions = parseQuestionsFromText(text);
+                        if (extractedQuestions.length > 0) {
+                            displayQuestionsPreview(extractedQuestions, message, preview, importBtn);
+                        } else {
+                            message.textContent = '❌ No questions found in file. Try a different format or check the file content.';
+                            message.className = 'message error';
+                        }
+                    } catch (err) {
+                        message.textContent = '❌ Error reading file: ' + err.message;
+                        message.className = 'message error';
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function processPDFJS(file, message, preview, importBtn) {
+            if (!window.pdfjsLib) {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                script.onload = function() {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         extractPDFText(e.target.result, message, preview, importBtn);
                     };
                     reader.readAsArrayBuffer(file);
-                }
+                };
+                script.onerror = function() {
+                    message.textContent = '❌ Could not load PDF processor. Please use another file format.';
+                    message.className = 'message error';
+                    preview.style.display = 'none';
+                    importBtn.style.display = 'none';
+                };
+                document.head.appendChild(script);
             } else {
-                message.textContent = '❌ Unsupported file format. Use .txt, .pdf, .doc, or .docx';
-                message.className = 'message error';
-                preview.style.display = 'none';
-                importBtn.style.display = 'none';
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    extractPDFText(e.target.result, message, preview, importBtn);
+                };
+                reader.readAsArrayBuffer(file);
             }
+        }
+
+        function processDOCX(file, message, preview, importBtn) {
+            if (!window.mammoth) {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+                script.onload = function() {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        mammoth.extractRawText({arrayBuffer: e.target.result})
+                            .then(function(result) {
+                                extractedQuestions = parseQuestionsFromText(result.value);
+                                displayQuestionsPreview(extractedQuestions, message, preview, importBtn);
+                            })
+                            .catch(function(err) {
+                                message.textContent = '❌ Error reading DOCX: ' + err.message;
+                                message.className = 'message error';
+                            });
+                    };
+                    reader.readAsArrayBuffer(file);
+                };
+                script.onerror = function() {
+                    message.textContent = '❌ Could not load DOCX processor. Trying as plain text...';
+                    message.className = 'message info';
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        extractedQuestions = parseQuestionsFromText(e.target.result);
+                        displayQuestionsPreview(extractedQuestions, message, preview, importBtn);
+                    };
+                    reader.readAsText(file);
+                };
+                document.head.appendChild(script);
+            } else {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    mammoth.extractRawText({arrayBuffer: e.target.result})
+                        .then(function(result) {
+                            extractedQuestions = parseQuestionsFromText(result.value);
+                            displayQuestionsPreview(extractedQuestions, message, preview, importBtn);
+                        })
+                        .catch(function(err) {
+                            message.textContent = '❌ Error reading DOCX: ' + err.message;
+                            message.className = 'message error';
+                        });
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function processDOC(file, message, preview, importBtn) {
+            message.textContent = '⏳ Processing .doc file (this may take a moment)...';
+            message.className = 'message info';
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const arrayBuffer = e.target.result;
+                if (!window.mammoth) {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+                    script.onload = function() {
+                        mammoth.extractRawText({arrayBuffer: arrayBuffer})
+                            .then(function(result) {
+                                extractedQuestions = parseQuestionsFromText(result.value);
+                                displayQuestionsPreview(extractedQuestions, message, preview, importBtn);
+                            })
+                            .catch(function() {
+                                const text = new TextDecoder('utf-8').decode(arrayBuffer).replace(/[^\x20-\x7E]/g, ' ');
+                                extractedQuestions = parseQuestionsFromText(text);
+                                displayQuestionsPreview(extractedQuestions, message, preview, importBtn);
+                            });
+                    };
+                    document.head.appendChild(script);
+                } else {
+                    mammoth.extractRawText({arrayBuffer: arrayBuffer})
+                        .then(function(result) {
+                            extractedQuestions = parseQuestionsFromText(result.value);
+                            displayQuestionsPreview(extractedQuestions, message, preview, importBtn);
+                        })
+                        .catch(function() {
+                            const text = new TextDecoder('utf-8').decode(arrayBuffer).replace(/[^\x20-\x7E]/g, ' ');
+                            extractedQuestions = parseQuestionsFromText(text);
+                            displayQuestionsPreview(extractedQuestions, message, preview, importBtn);
+                        });
+                }
+            };
+            reader.readAsArrayBuffer(file);
         }
 
         function extractPDFText(arrayBuffer, message, preview, importBtn) {
@@ -678,32 +824,144 @@
 
         function parseQuestionsFromText(text) {
             const questions = [];
+            text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
             const lines = text.split('\n').map(l => l.trim()).filter(l => l);
             let currentQuestion = null;
+            let optionsFound = 0;
+
+            const questionPatterns = [
+                /^Q\s*\.?\s*(\d+)\)?[:\.\-]?\s*/i,
+                /^Question\s+(\d+)[\.\:\-]?\s*/i,
+                /^\d+[\.\:\-]\s*/,
+                /^Q\d+[\.\:\-]\s*/i
+            ];
+
+            const optionPatterns = [
+                /^[A-D]\s*[\.\)\:\-]\s*/i,
+                /^Option\s+[A-D]\s*[\.\)\:\-]?\s*/i,
+                /^([A-D])\s*[\.\)\:\-]\s*/i
+            ];
+
+            const correctPatterns = [
+                /^Correct\s*[:=]\s*([A-D])/i,
+                /^Answer\s*[:=]\s*([A-D])/i,
+                /^Key\s*[:=]\s*([A-D])/i,
+                /^Answer\s+Key\s*[:=]\s*([A-D])/i,
+                /^\([A-D]\)$/,
+                /^\*[A-D]\*?$/
+            ];
 
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
-                const qMatch = line.match(/^Q\d+\)|^Question\s+\d+/i);
-                if (qMatch) {
-                    if (currentQuestion && currentQuestion.options && Object.keys(currentQuestion.options).length === 4) {
-                        questions.push(currentQuestion);
+                let isQuestionStart = false;
+
+                for (const pattern of questionPatterns) {
+                    if (pattern.test(line)) {
+                        if (currentQuestion && optionsFound >= 2) {
+                            questions.push(currentQuestion);
+                        }
+                        let qText = line;
+                        for (const p of questionPatterns) {
+                            qText = qText.replace(p, '');
+                        }
+                        currentQuestion = {
+                            text: qText.trim(),
+                            options: {}
+                        };
+                        optionsFound = 0;
+                        isQuestionStart = true;
+                        break;
                     }
-                    currentQuestion = {
-                        text: line.replace(/^Q\d+\)|^Question\s+\d+/i, '').trim(),
-                        options: {}
-                    };
-                } else if (currentQuestion && line.match(/^[A-D]\)/i)) {
-                    const optKey = line[0].toLowerCase();
-                    currentQuestion.options[optKey] = line.replace(/^[A-D]\)\s*/i, '').trim();
-                } else if (currentQuestion && line.match(/^Correct\s*[:=]\s*[A-D]/i)) {
-                    currentQuestion.correct = line.match(/[A-D]/i)[0].toLowerCase();
+                }
+
+                if (isQuestionStart) continue;
+
+                if (currentQuestion) {
+                    let isOption = false;
+                    for (const pattern of optionPatterns) {
+                        const match = line.match(pattern);
+                        if (match) {
+                            const optKey = line[0].toLowerCase();
+                            let optText = line.replace(pattern, '').trim();
+                            if (!currentQuestion.options[optKey]) {
+                                currentQuestion.options[optKey] = optText;
+                                optionsFound++;
+                                isOption = true;
+                            }
+                            break;
+                        }
+                    }
+
+                    if (isOption) continue;
+
+                    for (const pattern of correctPatterns) {
+                        const match = line.match(pattern);
+                        if (match) {
+                            currentQuestion.correct = match[1].toLowerCase();
+                            break;
+                        }
+                    }
+
+                    if (line.match(/^Answer\s*[:=]/i) || line.match(/^Correct\s*[:=]/i) || line.match(/^\([a-d]\)/i)) {
+                        continue;
+                    }
+
+                    if (!currentQuestion.correct && (line.toLowerCase().includes('answer is') || line.toLowerCase().includes('correct answer is'))) {
+                        const ansMatch = line.match(/[A-D]/i);
+                        if (ansMatch) {
+                            currentQuestion.correct = ansMatch[0].toLowerCase();
+                        }
+                    }
                 }
             }
 
-            if (currentQuestion && currentQuestion.options && Object.keys(currentQuestion.options).length === 4) {
+            if (currentQuestion && optionsFound >= 2) {
                 questions.push(currentQuestion);
             }
 
+            return questions;
+        }
+
+        function parseQuestionsFromCSV(text) {
+            const questions = [];
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+            
+            for (const line of lines) {
+                const parts = line.split(',').map(p => p.trim().replace(/^["']|["']$/g, ''));
+                if (parts.length >= 5) {
+                    questions.push({
+                        text: parts[0],
+                        options: {
+                            a: parts[1],
+                            b: parts[2],
+                            c: parts[3],
+                            d: parts[4]
+                        },
+                        correct: (parts[5] || 'a').toLowerCase()
+                    });
+                }
+            }
+            return questions;
+        }
+
+        function parseQuestionsFromJSON(data) {
+            const questions = [];
+            const arr = Array.isArray(data) ? data : (data.questions || data.items || []);
+            
+            for (const item of arr) {
+                if (item.question || item.text) {
+                    questions.push({
+                        text: item.question || item.text,
+                        options: item.options || item.choices || {
+                            a: item.a || item.optionA || '',
+                            b: item.b || item.optionB || '',
+                            c: item.c || item.optionC || '',
+                            d: item.d || item.optionD || ''
+                        },
+                        correct: item.correct || item.answer || item.correctAnswer || 'a'
+                    });
+                }
+            }
             return questions;
         }
 
@@ -776,3 +1034,6 @@
 
 </body>
 </html>
+
+
+
