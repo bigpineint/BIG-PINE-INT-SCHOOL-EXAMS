@@ -498,6 +498,11 @@
             if (tabName === 'viewQuestions') {
                 loadQuestions();
             }
+            
+            // Show added questions in Add Question tab
+            if (tabName === 'addQuestion') {
+                showAddedQuestions();
+            }
         }
 
         // Handle question form submission
@@ -537,6 +542,9 @@
             // Reset form
             this.reset();
 
+            // Show added questions in the form area
+            showAddedQuestions();
+            
             // Update question list
             loadQuestions();
 
@@ -544,6 +552,48 @@
                 document.getElementById('questionMessage').className = 'message';
             }, 3000);
         });
+
+        function showAddedQuestions() {
+            const questions = JSON.parse(localStorage.getItem('examQuestions')) || [];
+            const container = document.getElementById('questionForm');
+            
+            let questionsDiv = document.getElementById('addedQuestionsList');
+            if (!questionsDiv) {
+                questionsDiv = document.createElement('div');
+                questionsDiv.id = 'addedQuestionsList';
+                questionsDiv.style.marginTop = '20px';
+                questionsDiv.style.padding = '15px';
+                questionsDiv.style.background = 'rgba(34, 197, 94, 0.1)';
+                questionsDiv.style.borderRadius = '8px';
+                container.parentNode.insertBefore(questionsDiv, container.nextSibling);
+            }
+            
+            const recentQuestions = questions.slice(-5).reverse();
+            let html = '<h4 style="color: #22C55E; margin-bottom: 10px;">Recently Added Questions:</h4>';
+            
+            if (questions.length === 0) {
+                html = '<p style="color: #bbb;">No questions added yet</p>';
+            } else {
+                recentQuestions.forEach((q, idx) => {
+                    html += `<div style="background: rgba(0,0,0,0.3); padding: 10px; margin: 8px 0; border-radius: 6px; border-left: 3px solid #22C55E;">
+                        <p style="color: #22C55E; font-size: 12px; margin-bottom: 5px;">📚 ${q.class || 'All'} | Q${questions.length - idx}</p>
+                        <p style="color: #fff; font-size: 14px;">${q.text}</p>
+                        <div style="color: #aaa; font-size: 12px; margin-top: 5px;">
+                            <span style="color: ${q.correct === 'a' ? '#22C55E' : '#aaa'};">A) ${q.options.a}</span> | 
+                            <span style="color: ${q.correct === 'b' ? '#22C55E' : '#aaa'};">B) ${q.options.b}</span> | 
+                            <span style="color: ${q.correct === 'c' ? '#22C55E' : '#aaa'};">C) ${q.options.c}</span> | 
+                            <span style="color: ${q.correct === 'd' ? '#22C55E' : '#aaa'};">D) ${q.options.d}</span>
+                        </div>
+                        <p style="color: #22C55E; font-size: 12px; margin-top: 5px;">✓ Correct: ${q.correct.toUpperCase()}</p>
+                    </div>`;
+                });
+                if (questions.length > 5) {
+                    html += `<p style="color: #bbb; font-size: 12px; text-align: center;">...and ${questions.length - 5} more</p>`;
+                }
+            }
+            
+            questionsDiv.innerHTML = html;
+        }
 
         function loadQuestions() {
             const questions = JSON.parse(localStorage.getItem('examQuestions')) || [];
@@ -616,6 +666,50 @@
             if (!classes || classes.length === 0) {
                 const defaultClasses = ['Basic 3', 'Basic 4', 'Basic 5', 'JSS 1', 'JSS 2', 'JSS 3', 'SS 1', 'SS 2', 'SS 3'];
                 localStorage.setItem('examClasses', JSON.stringify(defaultClasses));
+            }
+            
+            // Initialize default questions if none exist
+            let questions = JSON.parse(localStorage.getItem('examQuestions'));
+            if (!questions || questions.length === 0) {
+                const defaultQuestions = [
+                    // Basic 3
+                    { id: 1, class: 'Basic 3', text: 'What is 5 + 3?', options: { a: '6', b: '7', c: '8', d: '9' }, correct: 'c' },
+                    { id: 2, class: 'Basic 3', text: 'What is 10 - 4?', options: { a: '4', b: '5', c: '6', d: '7' }, correct: 'c' },
+                    { id: 3, class: 'Basic 3', text: 'How many letters are in the word "CAT"?', options: { a: '2', b: '3', c: '4', d: '5' }, correct: 'b' },
+                    // Basic 4
+                    { id: 4, class: 'Basic 4', text: 'What is 12 × 2?', options: { a: '22', b: '24', c: '26', d: '28' }, correct: 'b' },
+                    { id: 5, class: 'Basic 4', text: 'What is 36 ÷ 6?', options: { a: '4', b: '5', c: '6', d: '7' }, correct: 'c' },
+                    { id: 6, class: 'Basic 4', text: 'What is the next number after 99?', options: { a: '100', b: '101', c: '98', d: '90' }, correct: 'a' },
+                    // Basic 5
+                    { id: 7, class: 'Basic 5', text: 'What is 125 ÷ 5?', options: { a: '20', b: '25', c: '30', d: '35' }, correct: 'b' },
+                    { id: 8, class: 'Basic 5', text: 'What is 15 × 4?', options: { a: '50', b: '55', c: '60', d: '65' }, correct: 'c' },
+                    { id: 9, class: 'Basic 5', text: 'What is 1000 - 1?', options: { a: '990', b: '999', c: '1001', d: '900' }, correct: 'b' },
+                    // JSS 1
+                    { id: 10, class: 'JSS 1', text: 'What is the square root of 64?', options: { a: '6', b: '7', c: '8', d: '9' }, correct: 'c' },
+                    { id: 11, class: 'JSS 1', text: 'Simplify: 3x + 2x', options: { a: '5x', b: '6x', c: '4x', d: '5x²' }, correct: 'a' },
+                    { id: 12, class: 'JSS 1', text: 'What is 2³?', options: { a: '6', b: '8', c: '9', d: '12' }, correct: 'b' },
+                    // JSS 2
+                    { id: 13, class: 'JSS 2', text: 'If x = 3, what is 2x + 5?', options: { a: '8', b: '9', c: '11', d: '13' }, correct: 'c' },
+                    { id: 14, class: 'JSS 2', text: 'What is the value of π (pi) approximately?', options: { a: '3.14', b: '3.41', c: '4.13', d: '2.13' }, correct: 'a' },
+                    { id: 15, class: 'JSS 2', text: 'Factorize: x² - 9', options: { a: '(x-3)(x+3)', b: '(x-3)²', c: '(x+3)²', d: '(x-9)(x+1)' }, correct: 'a' },
+                    // JSS 3
+                    { id: 16, class: 'JSS 3', text: 'What is the formula for area of a circle?', options: { a: 'πr²', b: '2πr', c: 'πd', d: 'πr³' }, correct: 'a' },
+                    { id: 17, class: 'JSS 3', text: 'Solve: 2(x + 3) = 12', options: { a: 'x = 3', b: 'x = 4', c: 'x = 5', d: 'x = 6' }, correct: 'a' },
+                    { id: 18, class: 'JSS 3', text: 'What is the sum of angles in a triangle?', options: { a: '90°', b: '180°', c: '270°', d: '360°' }, correct: 'b' },
+                    // SS 1
+                    { id: 19, class: 'SS 1', text: 'What is the capital of Nigeria?', options: { a: 'Lagos', b: 'Abuja', c: 'Kano', d: 'Port Harcourt' }, correct: 'b' },
+                    { id: 20, class: 'SS 1', text: 'What is H2O commonly known as?', options: { a: 'Salt', b: 'Water', c: 'Sugar', d: 'Oxygen' }, correct: 'b' },
+                    { id: 21, class: 'SS 1', text: 'Who wrote the Nigerian National Anthem?', options: { a: 'Wole Soyinka', b: 'John P. O. Echend', c: 'Chinua Achebe', d: 'Fela Kuti' }, correct: 'b' },
+                    // SS 2
+                    { id: 22, class: 'SS 2', text: 'What is Newton\'s first law also known as?', options: { a: 'Law of Energy', b: 'Law of Inertia', c: 'Law of Gravity', d: 'Law of Motion' }, correct: 'b' },
+                    { id: 23, class: 'SS 2', text: 'What is the chemical symbol for Sodium?', options: { a: 'So', b: 'Sd', c: 'Na', d: 'S' }, correct: 'c' },
+                    { id: 24, class: 'SS 2', text: 'In which year did Nigeria gain independence?', options: { a: '1957', b: '1960', c: '1963', d: '1970' }, correct: 'b' },
+                    // SS 3
+                    { id: 25, class: 'SS 3', text: 'What is the formula for kinetic energy?', options: { a: '½mv', b: '½mv²', c: 'mv²', d: 'mgh' }, correct: 'b' },
+                    { id: 26, class: 'SS 3', text: 'Who is the current President of Nigeria (as of 2023)?', options: { a: 'Goodluck Jonathan', b: 'Muhammadu Buhari', c: 'Bola Tinubu', d: 'Atiku Abubakar' }, correct: 'c' },
+                    { id: 27, class: 'SS 3', text: 'What is the square root of 144?', options: { a: '10', b: '11', c: '12', d: '14' }, correct: 'c' }
+                ];
+                localStorage.setItem('examQuestions', JSON.stringify(defaultQuestions));
             }
             
             loadClasses();
