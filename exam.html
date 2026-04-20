@@ -416,12 +416,20 @@
                 window.location.href = 'index.html';
             }
 
-            // Load questions from teacher settings or use defaults
+            // Load questions filtered by student class
+            const studentClass = document.getElementById('studentClass').textContent;
             const customQuestions = JSON.parse(localStorage.getItem('examQuestions'));
             if (customQuestions && customQuestions.length > 0) {
-                questions = customQuestions;
+                // Filter: questions for student's class OR questions for "All" classes
+                questions = customQuestions.filter(q => q.class === studentClass || q.class === 'All' || !q.class);
             } else {
                 questions = defaultQuestions;
+            }
+
+            if (questions.length === 0) {
+                alert('No questions found for your class. Please contact your teacher.');
+                window.location.href = 'index.html';
+                return;
             }
 
             document.getElementById('totalQuestions').textContent = questions.length;
