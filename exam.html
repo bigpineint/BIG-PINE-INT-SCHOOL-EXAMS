@@ -419,10 +419,14 @@
             // Load questions filtered by student class
             const studentClass = document.getElementById('studentClass').textContent;
             const customQuestions = JSON.parse(localStorage.getItem('examQuestions'));
+            
             if (customQuestions && customQuestions.length > 0) {
                 // Filter: questions for student's class OR questions for "All" classes
                 questions = customQuestions.filter(q => q.class === studentClass || q.class === 'All' || !q.class);
-            } else {
+            }
+            
+            // If no custom questions or no matching questions, use default questions
+            if (questions.length === 0) {
                 questions = defaultQuestions;
             }
 
