@@ -167,12 +167,44 @@
     </div>
 
     <script>
+        // Browser compatibility - storage helper
+        const storage = {
+            data: {},
+            isAvailable: function() {
+                try {
+                    localStorage.setItem('__test__', '1');
+                    localStorage.removeItem('__test__');
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            },
+            getItem: function(key) {
+                if (this.isAvailable()) {
+                    return localStorage.getItem(key);
+                }
+                return this.data[key] || null;
+            },
+            setItem: function(key, value) {
+                if (this.isAvailable()) {
+                    localStorage.setItem(key, value);
+                }
+                this.data[key] = value;
+            },
+            removeItem: function(key) {
+                if (this.isAvailable()) {
+                    localStorage.removeItem(key);
+                }
+                delete this.data[key];
+            }
+        };
+
         window.addEventListener('load', function() {
             loadClasses();
         });
 
         function loadClasses() {
-            const classes = JSON.parse(localStorage.getItem('examClasses')) || ['Basic 3', 'Basic 4', 'Basic 5', 'JSS 1', 'JSS 2', 'JSS 3', 'SS 1', 'SS 2', 'SS 3'];
+            const classes = JSON.parse(storage.getItem('examClasses')) || ['Basic 3', 'Basic 4', 'Basic 5', 'JSS 1', 'JSS 2', 'JSS 3', 'SS 1', 'SS 2', 'SS 3'];
             const classSelect = document.getElementById('class');
             
             classSelect.innerHTML = '<option value="">Select Class</option>';
@@ -233,7 +265,7 @@
                 loginTime: new Date().toLocaleString()
             };
             
-            localStorage.setItem('studentInfo', JSON.stringify(studentData));
+            storage.setItem('studentInfo', JSON.stringify(studentData));
             
             // Show success message
             messageDiv.textContent = '✅ Welcome ' + name + '! Starting exam...';
