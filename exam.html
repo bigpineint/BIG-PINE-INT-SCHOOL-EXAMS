@@ -382,6 +382,38 @@
     </div>
 
     <script>
+        // Browser compatibility - storage helper
+        const storage = {
+            data: {},
+            isAvailable: function() {
+                try {
+                    localStorage.setItem('__test__', '1');
+                    localStorage.removeItem('__test__');
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            },
+            getItem: function(key) {
+                if (this.isAvailable()) {
+                    return localStorage.getItem(key);
+                }
+                return this.data[key] || null;
+            },
+            setItem: function(key, value) {
+                if (this.isAvailable()) {
+                    localStorage.setItem(key, value);
+                }
+                this.data[key] = value;
+            },
+            removeItem: function(key) {
+                if (this.isAvailable()) {
+                    localStorage.removeItem(key);
+                }
+                delete this.data[key];
+            }
+        };
+
         let currentQuestionIndex = 0;
         let answers = [];
         const defaultQuestions = [
@@ -406,7 +438,7 @@
 
         // Load student info
         window.addEventListener('load', function() {
-            const studentInfo = localStorage.getItem('studentInfo');
+            const studentInfo = storage.getItem('studentInfo');
             if (studentInfo) {
                 const data = JSON.parse(studentInfo);
                 document.getElementById('studentName').textContent = data.name;
@@ -418,7 +450,7 @@
 
             // Load questions filtered by student class
             const studentClass = document.getElementById('studentClass').textContent;
-            const customQuestions = JSON.parse(localStorage.getItem('examQuestions'));
+            const customQuestions = JSON.parse(storage.getItem('examQuestions'));
             
             if (customQuestions && customQuestions.length > 0) {
                 // Filter: questions for student's class OR questions for "All" classes
@@ -443,7 +475,7 @@
             displayQuestion();
             
             // Load timer from settings
-            const settings = JSON.parse(localStorage.getItem('examSettings')) || { examDuration: 30 };
+            const settings = JSON.parse(storage.getItem('examSettings')) || { examDuration: 30 };
             timeLeft = parseInt(settings.examDuration) * 60;
             
             startTimer();
@@ -470,7 +502,7 @@
                         (minutes < 10 ? '0' : '') + minutes + ':' + 
                         (seconds < 10 ? '0' : '') + seconds;
                     
-                    let settings = JSON.parse(localStorage.getItem('examSettings')) || { examDuration: 30 };
+                    let settings = JSON.parse(storage.getItem('examSettings')) || { examDuration: 30 };
                     let totalTime = parseInt(settings.examDuration) * 60;
                     let progress = ((totalTime - timeLeft) / totalTime) * 100;
                     document.getElementById('progressBar').style.width = progress + '%';
@@ -565,7 +597,7 @@
                 submittedAt: new Date().toLocaleString()
             };
 
-            localStorage.setItem('examResults', JSON.stringify(results));
+            storage.setItem('examResults', JSON.stringify(results));
 
             // Create answer review - hide correct answers
             let reviewHTML = '';
